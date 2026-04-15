@@ -1,0 +1,39 @@
+# Description
+# -----------
+# This workflow builds and releases the maven artifact
+#
+# Setup
+# -----
+# 1. Create the following secrets inside GitHub:
+#    - LMS_GIT_CONFIG (Base64 encoded .gitconfig file)
+
+name: Maven Release
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: 'Java version to use'
+        required: true
+        default: '25'
+        type: string
+    secrets:
+      lms_git_config:
+        description: 'Base64 encoded .gitconfig file for Git'
+        required: true
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup git and other necessary files
+        run: |
+          echo -n '${{ secrets.lms_git_config }}' | base64 -d > ~/.gitconfig
+      - uses: actions/checkout@v6
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: 'temurin'
+          cache: maven
+      - name: Release prepare/perform
+        run: mvn clean release:prepare release:perform -B
