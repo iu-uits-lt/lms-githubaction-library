@@ -76,6 +76,15 @@ jobs:
       image: maven:3-eclipse-temurin-${{ inputs.java_version }}
     environment: ${{ github.event.inputs.server_env }}
     steps:
+      - name: Version Summary
+        run: |
+          echo '### Version Information' >> $GITHUB_STEP_SUMMARY
+          echo '<table>' >> $GITHUB_STEP_SUMMARY
+          echo '<tr><th>Setting</th><th>Value</th></tr>' >> $GITHUB_STEP_SUMMARY
+          echo "<tr><td>Tool Branch</td><td>${{ github.ref_name }}</td></tr>" >> $GITHUB_STEP_SUMMARY
+          echo "<tr><td>Deployment Branch</td><td>${{ github.event.inputs.helm_deployer_branch }}</td></tr>" >> $GITHUB_STEP_SUMMARY
+          echo "<tr><td>Environment</td><td>${{ github.event.inputs.server_env }}</td></tr>" >> $GITHUB_STEP_SUMMARY
+          echo '</table>' >> $GITHUB_STEP_SUMMARY
       - name: Clone GitHub root repository
         uses: actions/checkout@v6
         with:
