@@ -44,6 +44,22 @@ on:
         required: true
         description: Indicate the branch that contains the helm deployment files
         default: develop
+    secrets:
+        lms_maven_settings:
+            description: 'Base64 encoded settings.xml file for Maven'
+            required: true
+        lms_gh_token:
+            description: 'GitHub token for repository access'
+            required: true
+        lms_registry_username:
+            description: 'Username for Docker registry'
+            required: true
+        lms_registry_password:
+            description: 'Password for Docker registry'
+            required: true
+        lms_kubeconfig_deployer:
+            description: 'Base64 encoded kubeconfig file for deployment'
+            required: true
 
 env:
   TZ: America/New_York
@@ -65,7 +81,7 @@ jobs:
         with:
           repository: iu-uits-es/ess-lms-canvas-standalone-apps
           ref: ${{ github.event.inputs.helm_deployer_branch }}
-          token: ${{ secrets.LMS_GH_TOKEN }}
+          token: ${{ secrets.lms_gh_token }}
           github-server-url: https://github.iu.edu
       - name: Clone GitHub tool repository
         uses: actions/checkout@v6
@@ -74,7 +90,7 @@ jobs:
       - name: mvn setup
         run: mkdir /root/.m2
       - name: Create maven settings.xml
-        run: echo -n '${{ secrets.LMS_MAVEN_SETTINGS }}' | base64 -d > /root/.m2/settings.xml
+        run: echo -n '${{ secrets.lms_maven_settings }}' | base64 -d > /root/.m2/settings.xml
       - name: Maven Build
         run: mvn clean install -B -P '${{ vars.BUILD_PROFILES}}'
         working-directory: tools/${{ vars.DEPLOY_DIR }}
@@ -84,8 +100,8 @@ jobs:
           cp tools/${{ vars.DEPLOY_DIR }}/target/${{ vars.JAR_FILE }} deployments/${{ vars.DEPLOY_DIR }}/lib/${{ vars.JAR_FILE }}
       - name: build/push docker image
         run: |
-          mvn clean install -B -P docker-push -D dockerfile.username=${{ secrets.LMS_REGISTRY_USERNAME }} \
-            -D dockerfile.password=${{ secrets.LMS_REGISTRY_PASSWORD }} -D docker_repository_base=registry.docker.iu.edu/lms/ \
+          mvn clean install -B -P docker-push -D dockerfile.username=${{ secrets.lms_registry_username }} \
+            -D dockerfile.password=${{ secrets.lms_registry_password }} -D docker_repository_base=registry.docker.iu.edu/lms/ \
             -D docker_tag=${{ vars.DOCKER_TAG }}
         working-directory: deployments/${{ vars.DEPLOY_DIR }}
   deploy:
@@ -96,24 +112,24 @@ jobs:
     container:
       image: registry.docker.iu.edu/library/kube-deployer:stable
       credentials:
-        username: ${{ secrets.LMS_REGISTRY_USERNAME }}
-        password: ${{ secrets.LMS_REGISTRY_PASSWORD }}
+        username: ${{ secrets.lms_registry_username }}
+        password: ${{ secrets.lms_registry_password }}
     steps:
       - name: Clone GitHub repository
         uses: actions/checkout@v6
         with:
           repository: iu-uits-es/ess-lms-canvas-standalone-apps
           ref: ${{ github.event.inputs.helm_deployer_branch }}
-          token: ${{ secrets.LMS_GH_TOKEN }}
+          token: ${{ secrets.lms_gh_token }}
           github-server-url: https://github.iu.edu
       - name: Create KUBECONFIG file for the cluster
         run: |
-          echo -n '${{ secrets.LMS_KUBECONFIG_DEPLOYER}}' | base64 -d > /root/.kube/config
+          echo -n '${{ secrets.lms_kubeconfig_deployer}}' | base64 -d > /root/.kube/config
           chmod 400 /root/.kube/config
       - name: Get Docker Image SHA
         id: get-docker-image-sha
         run: |
-          echo "DOCKER_IMAGE_SHA=$(skopeo inspect --creds '${{ secrets.LMS_REGISTRY_USERNAME }}:${{ secrets.LMS_REGISTRY_PASSWORD }}' \
+          echo "DOCKER_IMAGE_SHA=$(skopeo inspect --creds '${{ secrets.lms_registry_username }}:${{ secrets.lms_registry_password }}' \
             docker://${{ env.IMAGE_TAG }} | jq -rc '.Digest' | awk -F':' '{ print $2 }')" >> "$GITHUB_OUTPUT"
       - name: Deploy
         env:
