@@ -44,22 +44,22 @@ on:
         required: true
         description: Indicate the branch that contains the helm deployment files
         default: develop
-    # secrets:
-    #   LMS_MAVEN_SETTINGS:
-    #     description: 'Base64 encoded settings.xml file for Maven'
-    #     required: true
-    #   LMS_GH_TOKEN:
-    #     description: 'GitHub token for repository access'
-    #     required: true
-    #   LMS_REGISTRY_USERNAME:
-    #     description: 'Username for Docker registry'
-    #     required: true
-    #   LMS_REGISTRY_PASSWORD:
-    #     description: 'Password for Docker registry'
-    #     required: true
-    #   LMS_KUBECONFIG_DEPLOYER:
-    #     description: 'Base64 encoded kubeconfig file for deployment'
-    #     required: true
+    secrets:
+      LMS_MAVEN_SETTINGS:
+        description: 'Base64 encoded settings.xml file for Maven'
+        required: true
+      LMS_GH_TOKEN:
+        description: 'GitHub token for repository access'
+        required: true
+      LMS_REGISTRY_USERNAME:
+        description: 'Username for Docker registry'
+        required: true
+      LMS_REGISTRY_PASSWORD:
+        description: 'Password for Docker registry'
+        required: true
+      LMS_KUBECONFIG_DEPLOYER:
+        description: 'Base64 encoded kubeconfig file for deployment'
+        required: true
 
 env:
   TZ: America/New_York

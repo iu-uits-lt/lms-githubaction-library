@@ -18,7 +18,7 @@ on:
         default: '25'
         type: string
     secrets:
-      lms_git_config:
+      LMS_GIT_CONFIG:
         description: 'Base64 encoded .gitconfig file for Git'
         required: true
 jobs:
@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Setup git and other necessary files
         run: |
-          echo -n '${{ secrets.lms_git_config }}' | base64 -d > ~/.gitconfig
+          echo -n '${{ secrets.LMS_GIT_CONFIG }}' | base64 -d > ~/.gitconfig
       - uses: actions/checkout@v6
       - name: Set up JDK
         uses: actions/setup-java@v5
