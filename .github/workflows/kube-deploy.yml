@@ -76,20 +76,6 @@ jobs:
       image: maven:3-eclipse-temurin-${{ inputs.java_version }}
     environment: ${{ inputs.server_env }}
     steps:
-      - name: Validate required secrets
-        run: |
-          missing=()
-          [[ -n '${{ secrets.LMS_MAVEN_SETTINGS }}' ]] || missing+=(LMS_MAVEN_SETTINGS)
-          [[ -n '${{ secrets.LMS_GH_TOKEN }}' ]] || missing+=(LMS_GH_TOKEN)
-          [[ -n '${{ secrets.LMS_REGISTRY_USERNAME }}' ]] || missing+=(LMS_REGISTRY_USERNAME)
-          [[ -n '${{ secrets.LMS_REGISTRY_PASSWORD }}' ]] || missing+=(LMS_REGISTRY_PASSWORD)
-          [[ -n '${{ secrets.LMS_KUBECONFIG_DEPLOYER }}' ]] || missing+=(LMS_KUBECONFIG_DEPLOYER)
-
-          if [[ ${#missing[@]} -gt 0 ]]; then
-            echo "::error::Missing required secrets: ${missing[*]}"
-            echo "Ensure the caller uses secrets: inherit or passes these explicitly."
-            exit 1
-          fi
       - name: Version Summary
         run: |
           echo '### Version Information' >> $GITHUB_STEP_SUMMARY
