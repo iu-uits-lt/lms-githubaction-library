@@ -6,6 +6,12 @@
 # -----
 # 1. Create the following secrets inside GitHub:
 #    - LMS_GIT_CONFIG (Base64 encoded .gitconfig file)
+# 2. (Optional) If you want to perform a full Maven release, create the following additional secrets:
+#    - LMS_MAVEN_SETTINGS (Base64 encoded settings.xml file)
+#    - LMS_MAVEN_SECURITY (Base64 encoded settings-security.xml file)
+#    - LMS_GPG_PASSPHRASE (GPG passphrase)
+#    - LMS_GPG_SIGNING_KEY (Base64 encoded GPG signing key to be imported)
+#    - LMS_GPG_SECRET_KEY (Base64 encoded GPG secret key to be imported)
 
 name: Maven Release
 
@@ -17,10 +23,30 @@ on:
         required: true
         default: '25'
         type: string
+      full_maven_release:
+        description: 'Whether to perform a full Maven release'
+        required: false
+        default: false
+        type: boolean
     secrets:
       LMS_GIT_CONFIG:
         description: 'Base64 encoded .gitconfig file for Git'
         required: true
+      LMS_MAVEN_SETTINGS:
+        description: 'Base64 encoded settings.xml file for Maven'
+        required: false
+      LMS_MAVEN_SECURITY:
+        description: 'Base64 encoded settings-security.xml file for Maven'
+        required: false
+      LMS_GPG_PASSPHRASE:
+        description: 'GPG passphrase'
+        required: false
+      LMS_GPG_SIGNING_KEY:
+        description: 'Base64 encoded GPG signing key to be imported'
+        required: false
+      LMS_GPG_SECRET_KEY:
+        description: 'Base64 encoded GPG secret key to be imported'
+        required: false
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -28,6 +54,15 @@ jobs:
       - name: Setup git and other necessary files
         run: |
           echo -n '${{ secrets.LMS_GIT_CONFIG }}' | base64 -d > ~/.gitconfig
+      - name: Setup git and other necessary files for optional full release
+        if: ${{ inputs.full_maven_release }}
+        run: |
+          mkdir ~/.gpg
+          mkdir ~/.m2
+          echo -n '${{ secrets.LMS_MAVEN_SETTINGS }}' | base64 -d > ~/.m2/settings.xml
+          echo -n '${{ secrets.LMS_MAVEN_SECURITY }}' | base64 -d > ~/.m2/settings-security.xml
+          echo -n '${{ secrets.LMS_GPG_SIGNING_KEY }}' | base64 -d > ~/.gpg/lmsdev-maven-signing-key.asc
+          echo -n '${{ secrets.LMS_GPG_SECRET_KEY }}' | base64 -d > ~/.gpg/lmsdev-maven-secret-key.key
       - uses: actions/checkout@v6
       - name: Set up JDK
         uses: actions/setup-java@v5
@@ -35,5 +70,10 @@ jobs:
           java-version: ${{ inputs.java_version }}
           distribution: 'temurin'
           cache: maven
+      - name: Import gpg keys
+        if: ${{ inputs.full_maven_release }}
+        run: |
+          gpg --import --passphrase '${{ secrets.LMS_GPG_PASSPHRASE }}' --batch --yes ~/.gpg/lmsdev-maven-signing-key.asc
+          gpg --import --passphrase '${{ secrets.LMS_GPG_PASSPHRASE }}' --batch --yes ~/.gpg/lmsdev-maven-secret-key.key
       - name: Release prepare/perform
         run: mvn clean release:prepare release:perform -B
